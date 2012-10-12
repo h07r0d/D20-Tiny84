@@ -35,8 +35,8 @@ void shiftOut(uint16_t _number)
 	for (i=0;i<16;i++)
 	{
 		// a 1 should drive high, as a drive low turns on a segment
-		if (bit_get(_number,BIT(i))) { CONTROL_PORT |= (1<< Data_Pin); }
-		else { CONTROL_PORT &= ~(1<< Data_Pin); }
+		if (bit_get(_number,BIT(i))) { CONTROL_PORT |= BIT(Data_Pin); }
+		else { CONTROL_PORT &= ~BIT(Data_Pin); }
 
 		// shift the bit into the SR
 		shift_in();
