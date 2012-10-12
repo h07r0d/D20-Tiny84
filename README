@@ -1,0 +1,6 @@
+Source for a DIY Digital D20.
+Parts:
+	ATTiny84
+	2x 74HC595N Shift Registers
+	2x 7 Segment LEDs
+	Quadrature encoder w/ Button
