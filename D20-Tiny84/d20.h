@@ -15,7 +15,7 @@
 #include <avr/sfr_defs.h>
 #include <avr/eeprom.h>
 #include <util/delay.h>
-#define F_CPU 4000000	//4MHz
+
 /*
  * Pin Definitions and bitwise helpers
  */
@@ -49,5 +49,6 @@ void displayNumber(uint8_t);
 
 // Globals
 volatile uint16_t seed;
+volatile uint8_t dice;
 
 #endif /* D20_H_ */
