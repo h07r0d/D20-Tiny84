@@ -25,6 +25,7 @@ void config(void)
 	}
 	
 	// set last_vector to high for defaults
+	last_vector = 0xFF;
 	
 	// set DATA, LATCH and CLOCK pins to OUTPUT for the bit shifter control
 	CONTROL_DDR = 0;	// start off with everything as inputs
@@ -44,14 +45,19 @@ void config(void)
 
 ISR(PCINT0_vect)
 {
-	// Determine which Pin fired the interrupt
 	cli();
-	if (CONTROL_PIN & BIT(Button_Pin))	// Roll the Dice
+	uint8_t _changed;
+	_changed = CONTROL_PIN ^ last_vector;
+	last_vector = CONTROL_PIN;
+	
+	if (_changed & BIT(Button_Pin))	// Roll the Dice
 	{
 		displayRolling();
 		displayNumber(roll_dice());
 	}
-	else if ((CONTROL_PIN & BIT(Encoder_A_Pin)) || (CONTROL_PIN & BIT(Encoder_B_Pin)))
+	else if (
+		(_changed & BIT(Encoder_A_Pin)) || 
+		(_changed & BIT(Encoder_B_Pin)))
 	{
 		encoder_check();	// increments or decrements dice_index accordingly
 		displayDieSize();	// show what die size is going to be rolled next
