@@ -24,6 +24,7 @@ void config(void)
 		eeprom_write_word((uint16_t*)E_SEED, seed);
 	}
 	
+	// set last_vector to high for defaults
 	
 	// set DATA, LATCH and CLOCK pins to OUTPUT for the bit shifter control
 	CONTROL_DDR = 0;	// start off with everything as inputs
@@ -45,24 +46,38 @@ ISR(PCINT0_vect)
 {
 	// Determine which Pin fired the interrupt
 	cli();
-	if (PINA & BIT(Button_Pin))	// Roll the Dice
+	if (CONTROL_PIN & BIT(Button_Pin))	// Roll the Dice
 	{
 		displayRolling();
-		displayNumber(dice);
+		displayNumber(roll_dice());
+	}
+	else if ((CONTROL_PIN & BIT(Encoder_A_Pin)) || (CONTROL_PIN & BIT(Encoder_B_Pin)))
+	{
+		encoder_check();	// increments or decrements dice_index accordingly
+		displayDieSize();	// show what die size is going to be rolled next
 	}
 	sei();
+}
+
+// generate a 'rolled' value
+uint16_t roll_dice(void)
+{
+	// mod against _dice to get the correct size
+	uint8_t _dice = pgm_read_byte(&(dice_sizes[dice_index]));
+	return (rnd16() % _dice) + 1;
 }
 
 int main(void)
 {
 	// config all functions and pinouts
 	config();	
-	dice = 20;
+	dice_index = 5;	// 5th element in dice_sizes is 20
+	displayDieSize();
 	
     while(1)
 	{
 		//displayRolling();
-		//displayNumber(dice);
+		//displayNumber();
 	}
 }
 

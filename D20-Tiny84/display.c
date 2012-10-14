@@ -6,8 +6,9 @@
  */ 
 
 #include "d20.h"
-const uint8_t outputNumbers[] = {0x88, 0xEB, 0x4C, 0x49, 0x2B, 0x19, 0x18, 0xCB, 0x08, 0x09};
-const uint8_t powers[] = {1,10};
+static const uint8_t outputNumbers[] PROGMEM = {0x88, 0xEB, 0x4C, 0x49, 0x2B, 0x19, 0x18, 0xCB, 0x08, 0x09};
+static const uint8_t powers[] = {1,10};
+	
 volatile uint16_t lfsr16;
 volatile uint16_t outBits = 0;
 /*
@@ -32,8 +33,8 @@ uint16_t rnd16()
 uint16_t getBitPattern(uint16_t _number)
 {
 	uint16_t _value = 0x00;	
-	_value |= (outputNumbers[getDigit(_number, 1)]) << 8;
-	_value |= outputNumbers[getDigit(_number,0)];	
+	_value |= (pgm_read_byte(&(outputNumbers[getDigit(_number, 1)]))) << 8;
+	_value |= pgm_read_byte(&(outputNumbers[getDigit(_number,0)]));	
 	return _value;
 }
 
@@ -50,30 +51,28 @@ uint8_t getDigit(uint16_t _number, uint8_t _digit)
 // Display random garbage to simulate "rolling"
 void displayRolling(void)
 {
-	uint16_t rng=0;
-	uint8_t i;
-	for(i=15;i>0;--i)
+	uint16_t _rng=0;
+	uint8_t _i;
+	for(_i=15;_i>0;--_i)
 	{
-		rng = rnd16();
+		_rng = rnd16();
 		
 		// cheating a bit.
 		// random looks better without the decimal points
 		// just mask them out
-		bit_set(rng, BIT(3));
-		bit_set(rng, BIT(11));
-		shiftOut(rng);
+		bit_set(_rng, BIT(3));
+		bit_set(_rng, BIT(11));
+		shiftOut(_rng);
 #ifndef __DEBUG__
 		_delay_ms(100);
 #endif				
 	}	
 }
 
-// Display 'Rolled' Number.  The _dice value determine the die size being rolled for
-void displayNumber(uint8_t _dice)
+// Display 'Rolled' Number.
+void displayNumber(uint16_t _roll)
 {
-	// mod against _dice to get the correct size
-	uint16_t _rnd = (rnd16() % _dice) + 1;
-	outBits = getBitPattern(_rnd);				
+	outBits = getBitPattern(_roll);				
 	reset_SR();		
 		
 #ifndef __DEBUG__
@@ -87,6 +86,21 @@ void displayNumber(uint8_t _dice)
 	shiftOut(outBits);
 	//wait long enough to see results
 	_delay_ms(2000);
+	shiftOut(0xFFFF);
 #endif	
+}
+
+// Display current size of die that will be rolled
+void displayDieSize()
+{
+	uint8_t _dice = pgm_read_byte(&(dice_sizes[dice_index]));
+	outBits = getBitPattern((uint16_t)_dice);
+	reset_SR();
+	
+	shiftOut(0xFFFF);
+	_delay_ms(100);
+	shiftOut(outBits);
+	_delay_ms(1000);
+	shiftOut(0xFFFF);
 }
 

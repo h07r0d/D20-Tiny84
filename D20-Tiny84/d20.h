@@ -14,6 +14,7 @@
 #include <avr/sleep.h>
 #include <avr/sfr_defs.h>
 #include <avr/eeprom.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
 
 /*
@@ -23,6 +24,7 @@
 #define E_STORED		2
 #define CONTROL_DDR		DDRA
 #define CONTROL_PORT	PORTA
+#define CONTROL_PIN		PINA
 #define Button_Pin		PA6
 #define Data_Pin		PA2
 #define Latch_Pin		PA4
@@ -44,11 +46,18 @@ void config(void);
 void reset_SR(void);
 void shift_in(void);
 void latch_in(void);
+uint16_t roll_dice(void);
 void displayRolling(void);
-void displayNumber(uint8_t);
+void displayNumber(uint16_t);
+void displayDieSize(void);
+void encoder_check(void);
+void increment_dice(void);
+void decrement_dice(void);
 
 // Globals
 volatile uint16_t seed;
-volatile uint8_t dice;
+volatile int8_t dice_index;
+volatile uint8_t last_vector;
+static const uint8_t dice_sizes [] PROGMEM = {4,6,8,10,12,20};
 
 #endif /* D20_H_ */
