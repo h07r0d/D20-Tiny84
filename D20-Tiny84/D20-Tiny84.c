@@ -23,7 +23,7 @@ void config(void)
 		else seed = 0;
 		eeprom_write_word((uint16_t*)E_SEED, seed);
 	}
-	
+
 	// set last_vector to high for defaults
 	last_vector = 0xFF;
 	
@@ -34,15 +34,24 @@ void config(void)
 	// set Button and Encoder pin pull-ups
 	CONTROL_PORT |= BIT(Button_Pin) | BIT(Encoder_A_Pin) | BIT(Encoder_B_Pin);
 	
-	// configure pin change interrupts for push button and encoder
-	PCMSK0 |= BIT(Button_Pin) | BIT(Encoder_B_Pin) | BIT(Encoder_A_Pin);
+	// configure pin change interrupts for encoder
+	PCMSK0 |= BIT(Encoder_B_Pin) | BIT(Encoder_A_Pin);
 	GIMSK |= BIT(PCIE0);
+	
+	// setup timer/counter to poll for button press
+	// Want resolution of 5ms to poll button.
+	// F_CPU is set at 1MHz, so a CTC value of 49999 should do it
+	TCCR0B |= BIT(CS00);	// no scaling required
+	TCCR0A |= BIT(WGM01);	// CTC mode
+	OCR0A = 49999;
+	TIMSK0 |= BIT(OCIE0B);
 
 	// enable interrupts
 	sei();
 	
 }
 
+// handle rotary encoder changes
 ISR(PCINT0_vect)
 {
 	cli();
@@ -50,14 +59,7 @@ ISR(PCINT0_vect)
 	_changed = CONTROL_PIN ^ last_vector;
 	last_vector = CONTROL_PIN;
 	
-	if (_changed & BIT(Button_Pin))	// Roll the Dice
-	{
-		displayRolling();
-		displayNumber(roll_dice());
-	}
-	else if (
-		(_changed & BIT(Encoder_A_Pin)) || 
-		(_changed & BIT(Encoder_B_Pin)))
+	if ( (_changed & BIT(Encoder_A_Pin)) || (_changed & BIT(Encoder_B_Pin)))
 	{
 		encoder_check();	// increments or decrements dice_index accordingly
 		displayDieSize();	// show what die size is going to be rolled next
@@ -65,8 +67,36 @@ ISR(PCINT0_vect)
 	sei();
 }
 
+// Polling for button press
+// pulled from the 'Debounce Bible' http://www.ganssle.com/debouncing-pt2.htm
+ISR(TIM0_COMPB_vect)
+{
+	if (debounceSwitch())
+	{
+		cli();
+		displayRolling();
+		displayNumber(roll_dice());
+		sei();
+	}
+}
+
+
+bool debounceSwitch()
+{
+	static uint16_t _state = 0;
+	_state = (_state << 1) | !buttonPressed() | 0xe000;
+	if (_state == 0xf000) return true;
+	return false;
+}
+
+// check if a roll has been requested
+bool buttonPressed()
+{
+	return CONTROL_PIN & BIT(Button_Pin);
+}
+
 // generate a 'rolled' value
-uint16_t roll_dice(void)
+uint16_t roll_dice()
 {
 	// mod against _dice to get the correct size
 	uint8_t _dice = pgm_read_byte(&(dice_sizes[dice_index]));
@@ -80,10 +110,14 @@ int main(void)
 	dice_index = 5;	// 5th element in dice_sizes is 20
 	displayDieSize();
 	
-    while(1)
+    for(;;)
 	{
-		//displayRolling();
-		//displayNumber();
+		//if(button_pressed)
+		//{
+			//displayRolling();
+			//displayNumber(roll_dice());
+			//button_pressed = false;
+		//}
 	}
 }
 

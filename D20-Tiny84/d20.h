@@ -9,6 +9,7 @@
 #ifndef D20_H_
 #define D20_H_
 
+#include <stdbool.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
@@ -47,6 +48,8 @@ void reset_SR(void);
 void shift_in(void);
 void latch_in(void);
 uint16_t roll_dice(void);
+bool buttonPressed(void);
+bool debounceSwitch(void);
 void displayRolling(void);
 void displayNumber(uint16_t);
 void displayDieSize(void);
@@ -58,6 +61,7 @@ void decrement_dice(void);
 volatile uint16_t seed;
 volatile int8_t dice_index;
 volatile uint8_t last_vector;
+volatile bool button_pressed;
 static const uint8_t dice_sizes [] PROGMEM = {4,6,8,10,12,20};
 
 #endif /* D20_H_ */
